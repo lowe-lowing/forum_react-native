@@ -2,7 +2,7 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { useNavigation } from '@react-navigation/native';
 import { auth, database, storage } from '../firebase';
-import { updateProfile } from 'firebase/auth';
+import { updateCurrentUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,14 +15,12 @@ const EditProfileScreen = () => {
     const [bioInput, setBioInput] = useState()
 
     async function updateProfileInfo(nameg, biografyg) {
-        const oldName = user.displayName
         const docRef = doc(database, "userInfo", user.uid); 
-        // TODO: kanske kolla så att om name och bio inte har ändrats så ska den inte updatera
         await updateDoc(docRef, {
             name: nameg,
             biografy: biografyg
         }).catch(err => console.log(err));
-        navigation.navigate(oldName || "username")
+        navigation.navigate("Profile Screen")
     }
     function navSetOptions(name, biografy) {
         navigation.setOptions(({
@@ -53,7 +51,11 @@ const EditProfileScreen = () => {
         const imageUrl = await getDownloadURL(fileRef)
         await updateProfile(user, {
             photoURL: imageUrl
-        }) 
+        })
+        const docRef = doc(database, "userInfo", user.uid); 
+        await updateDoc(docRef, {
+            pfp: imageUrl,
+        }).catch(err => console.log(err));
         setImageUri(imageUrl)
       }
     };
@@ -69,14 +71,13 @@ const EditProfileScreen = () => {
             setImageUri(user.photoURL)
             navigation.setOptions(({
                 headerRight: () => 
-                <TouchableOpacity onPress={() => navigation.navigate(user.displayName)}>
+                <TouchableOpacity onPress={() => navigation.navigate("Profile Screen")}>
                     <Image source={require("../assets/icons/done.png")} style={{width: 30, height: 30}} />
                 </TouchableOpacity>
             }))
         }
         return unsub()
       }, [navigation, setImageUri]);
-    //   if looks like this [navigation, nameInput], useEffect calls everytime nameInput changes
 
     return (
         <View style={styles.container}>

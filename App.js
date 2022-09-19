@@ -3,7 +3,7 @@ import { Button, Image, LogBox, StyleSheet, Text, TouchableOpacity, View } from 
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { auth } from './firebase'
+import { auth, database } from './firebase'
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import HomeScreen from './screens/HomeScreen';
@@ -18,17 +18,18 @@ import CommentScreen from './screens/CommentScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import MemberProfileScreen from './screens/MemberProfileScreen';
 import PrivateMessageComponent from './components/PrivateMessageComponent';
-
-LogBox.ignoreLogs([
-  'syncStorage has been extracted from react-native core and will be removed in a future release.',
-]);
+import SearchScreen from './screens/SearchScreen';
+import CreateGroupScreen from './screens/CreateGroupScreen';
+import GroupRoomScreen from './screens/GroupRoomScreen';
+import { doc, getDoc } from 'firebase/firestore';
 
 const LoginStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator()
 const HomeStack = createNativeStackNavigator();
-const PrivateMessageStack = createNativeStackNavigator();
+const SearchStack = createNativeStackNavigator();
 const GroupStack = createNativeStackNavigator();
+const PrivateMessageStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 
 const HomeStackScreen = () => (
@@ -47,22 +48,37 @@ const HomeStackScreen = () => (
     <HomeStack.Screen name="Member Profile" component={MemberProfileScreen}/>
   </HomeStack.Navigator>
 )
+const SearchStackScreen = () => (
+  <SearchStack.Navigator>
+    <SearchStack.Screen name="Search" component={SearchScreen}/>
+    <SearchStack.Screen name="Member Profile" component={MemberProfileScreen}/>
+  </SearchStack.Navigator>
+)
 const GroupStackScreen = () => (
   <GroupStack.Navigator>
-    <GroupStack.Screen name="Group" component={GroupScreen}/>
-    <GroupStack.Screen name="post" component={HomeScreen}/>
+    <GroupStack.Screen name="Groups" component={GroupScreen}
+      options={({ navigation }) => ({ 
+        headerRight: () => (
+          <Button title="Create Group"
+            onPress={() => {
+              navigation.navigate("Create Group")
+            }}
+          />
+      ),})}/>
+    <GroupStack.Screen name="Create Group" component={CreateGroupScreen}/>
+    <GroupStack.Screen name="Group Room" component={GroupRoomScreen}/>
   </GroupStack.Navigator>
 )
 const PrivateMessageStackScreen = () => (
   <PrivateMessageStack.Navigator>
-    <PrivateMessageStack.Screen name="Private Message" component={PrivateMessageScreen}/>
+    <PrivateMessageStack.Screen name="Private Messages" component={PrivateMessageScreen}/>
     <PrivateMessageStack.Screen name="post" component={HomeScreen}/>
   </PrivateMessageStack.Navigator>
 )
 const ProfileStackScreen = () => (
   <ProfileStack.Navigator>
-    <ProfileStack.Screen name={auth.currentUser.displayName || "username"} component={ProfileScreen}
-    options={() => ({ 
+    <ProfileStack.Screen name={"Profile Screen"} component={ProfileScreen}
+    options={() => ({
       headerRight: () => (
         <Button title="Sign Out"
           onPress={() => {
@@ -79,6 +95,8 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
+        "tabBarActiveBackgroundColor": 'cyan',
+        "tabBarShowLabel": false,
         "headerShown": false,
         "tabBarActiveTintColor": "red",
         "tabBarStyle": [
@@ -88,22 +106,27 @@ function MainTabs() {
           null
         ]
       }}>
-      <Tab.Screen name="Home" component={HomeStackScreen}
+      <Tab.Screen name="Home Tab" component={HomeStackScreen}
         options={{
           tabBarIcon: () => (<Image source={require("./assets/icons/home.png")} style={{width: 20, height: 20}} />)
         }}
       />
-      <Tab.Screen name="Groups" component={GroupStackScreen}
+      <Tab.Screen name="Search Tab" component={SearchStackScreen}
+        options={{
+          tabBarIcon: () => (<Image source={require("./assets/icons/search.png")} style={{width: 20, height: 20}} />)
+        }}
+      />
+      <Tab.Screen name="Groups Tab" component={GroupStackScreen}
         options={{
           tabBarIcon: () => (<Image source={require("./assets/icons/group.png")} style={{width: 20, height: 20}} />)
         }}
       />
-      <Tab.Screen name="Private Messages" component={PrivateMessageStackScreen}
+      <Tab.Screen name="Private Messages Tab" component={PrivateMessageStackScreen}
         options={{
           tabBarIcon: () => (<Image source={require("./assets/icons/messages.png")} style={{width: 20, height: 20}} />)
         }}
       />
-      <Tab.Screen name="Profile" component={ProfileStackScreen}
+      <Tab.Screen name="Profile Tab" component={ProfileStackScreen}
         options={{
           tabBarIcon: () => (<Image source={user.photoURL?{uri:user.photoURL}:require("./assets/icons/profile.png")} style={{width: 20, height: 20, borderRadius: 50}} />)
         }}
@@ -115,15 +138,16 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
-      // const unsubscribe = 
-      onAuthStateChanged(auth, user => {
+      // const unsubscribe = () => {
+        onAuthStateChanged(auth, user => {
           if (user) {
             setLoggedIn(true);
           }
           else {
             setLoggedIn(false);
           }
-      });
+        });
+      // }
       // return unsubscribe
   }, [])
   return (

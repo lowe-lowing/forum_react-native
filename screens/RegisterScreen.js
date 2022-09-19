@@ -15,7 +15,7 @@ const RegisterScreen = () => {
       .then(async (userCredentials) => {
           const user = userCredentials.user
           await updateProfile(user, {
-            displayName: username
+            displayName: fullName
           })
           await setDoc(doc(database, "userInfo", user.uid), {
             name: fullName,

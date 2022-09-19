@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   postText: {
-    margin: 20,
+    margin: 10,
     fontSize: 16,
   }
 })

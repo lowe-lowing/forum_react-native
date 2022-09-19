@@ -2,20 +2,21 @@ import { Button, Image, ScrollView, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { auth, database, storage } from '../firebase'
 import { useNavigation } from '@react-navigation/native'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import { getDownloadURL, ref } from 'firebase/storage'
 import ProfilePosts from '../components/ProfilePosts'
 import { HeightContext } from '../context/heightContext'
 
 const MemberProfileScreen = () => {
-  const user = auth.currentUser
-  const navigation = useNavigation()
-
   const [memberId, setMemberId] = useState("")
   const [imageUrl, setImageUrl] = useState()
   const [userInfo, setUserInfo] = useState({})
   const [following, setFollowing] = useState()
   const [value, setValue] = useState(100)
+  const [amountOfPosts, setAmountOfPosts] = useState(0)
+
+  const user = auth.currentUser
+  const navigation = useNavigation()
 
   async function handleFollow() {
     const memberDocRef = doc(database, "userInfo", memberId);
@@ -58,7 +59,6 @@ const MemberProfileScreen = () => {
     const unsubscribe = navigation.addListener('focus', async () => {
         const id = navigation.getState().routes[1].params.id
         setMemberId(id)
-
         const docRef = doc(database, "userInfo", id);
         const docSnap = await getDoc(docRef);
         const docData = docSnap.data()
@@ -69,6 +69,8 @@ const MemberProfileScreen = () => {
         const downmloadUrl = await getDownloadURL(ref(storage, id + ".png")).catch(() => (undefined))
         setImageUrl(downmloadUrl)
         setFollowing(docData.followers ? docData.followers.indexOf(user.uid)>-1 : false)
+        const posts = await getDocs(query(collection(database, "Posts"), where("authorId", "==", id)))
+        setAmountOfPosts(posts.size)
     });
 
     // Return the function to unsubscribe from the event so it gets removed on unmount
@@ -76,44 +78,44 @@ const MemberProfileScreen = () => {
   }, [navigation]);
 
   return (
-    <>
-    <View style={styles.container}>
-      <View style={styles.profileInfo}>
-        <Image source={imageUrl?{uri:imageUrl}:require("../assets/icons/default_pfp.png")} style={styles.profilePicture}/>
-        <View style={styles.profileStats}>
-          <Text style={styles.fontSizeBold}>128</Text>
-          <Text>Posts</Text>
+    <ScrollView>
+      <View style={styles.container}>
+        <View style={styles.profileInfo}>
+          <Image source={imageUrl?{uri:imageUrl}:require("../assets/icons/default_pfp.png")} style={styles.profilePicture}/>
+          <View style={styles.profileStats}>
+            <Text style={styles.fontSizeBold}>{amountOfPosts}</Text>
+            <Text>Posts</Text>
+          </View>
+          <View style={styles.profileStats}>
+            <Text style={styles.fontSizeBold}>{userInfo.followers ? userInfo.followers.length : 0}</Text>
+            <Text>Followers</Text>
+          </View>
+          <View style={styles.profileStats}>
+            <Text style={styles.fontSizeBold}>{userInfo.following ? userInfo.following.length : 0}</Text>
+            <Text>Following</Text>
+          </View>
         </View>
-        <View style={styles.profileStats}>
-          <Text style={styles.fontSizeBold}>{userInfo.followers ? userInfo.followers.length : 0}</Text>
-          <Text>Followers</Text>
-        </View>
-        <View style={styles.profileStats}>
-          <Text style={styles.fontSizeBold}>{userInfo.following ? userInfo.following.length : 0}</Text>
-          <Text>Following</Text>
-        </View>
+        <Text>{userInfo.name&&userInfo.name}</Text>
+        <Text style={{marginBottom:5}}>{userInfo.biografy&&userInfo.biografy}</Text>
+        { following ?
+        <View style={styles.buttonContainer}>
+          <View style={styles.innerButtonContainer}>
+            <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Unfollow" />
+            <Button style={styles.editProfileButton} onPress={() => {navigation.navigate("Private Message Component", {id: memberId})}} title="Send message" /> 
+          </View>
+        </View>:
+        <View style={styles.buttonContainer}>
+          <View style={{width: '50%'}}>
+            <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Follow" />
+          </View>
+        </View>}
       </View>
-      <Text>{userInfo.name&&userInfo.name}</Text>
-      <Text style={{marginBottom:5}}>{userInfo.biografy&&userInfo.biografy}</Text>
-      { following ?
-      <View style={styles.buttonContainer}>
-        <View style={styles.innerButtonContainer}>
-          <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Unfollow" />
-          <Button style={styles.editProfileButton} onPress={() => {navigation.navigate("Private Message Component", {id: memberId})}} title="Send message" /> 
+      <HeightContext.Provider value={{value, setValue}}>
+        <View style={{height: value, width: '100%'}}>
+          {ProfilePosts(navigation.getState().routes[1].params.id)}
         </View>
-      </View>:
-      <View style={styles.buttonContainer}>
-        <View style={{width: '50%'}}>
-          <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Follow" />
-        </View>
-      </View>}
-    </View>
-    <HeightContext.Provider value={{value, setValue}}>
-      <View style={{height: value, width: '100%'}}>
-        {ProfilePosts(navigation.getState().routes[1].params.id)}
-      </View>
-    </HeightContext.Provider>
-    </>
+      </HeightContext.Provider>
+    </ScrollView>
   )
 }
 
@@ -156,6 +158,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row", 
     justifyContent: 'center',
+    marginTop: 20,
   },
   innerButtonContainer: {
     flexDirection: "row", 

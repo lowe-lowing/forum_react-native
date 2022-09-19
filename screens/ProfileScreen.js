@@ -2,27 +2,30 @@ import { Button, Image, ScrollView, StyleSheet, Text, View } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { auth, database } from '../firebase'
 import { useNavigation } from '@react-navigation/native'
-import { doc, getDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
 import ProfilePosts from '../components/ProfilePosts'
 import { HeightContext } from '../context/heightContext'
 
 const ProfileScreen = () => {
-  const user = auth.currentUser
-  const navigation = useNavigation()
-
   const [imageUrl, setImageUrl] = useState()
   const [userInfo, setUserInfo] = useState({})
   const [value, setValue] = useState(100)
+  const [amountOfPosts, setAmountOfPosts] = useState(0)
+
+  const user = auth.currentUser
+  const navigation = useNavigation()
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
       setImageUrl(user.photoURL)
       const docRef = doc(database, "userInfo", user.uid);
       const docSnap = await getDoc(docRef);
+      navigation.setOptions({title: docSnap.data().username})
       setUserInfo(docSnap.data())
+      const posts = await getDocs(query(collection(database, "Posts"), where("authorId", "==", user.uid)))
+      setAmountOfPosts(posts.size)
     });
 
-    // Return the function to unsubscribe from the event so it gets removed on unmount
     return unsubscribe;
   }, [navigation]);
 
@@ -32,7 +35,7 @@ const ProfileScreen = () => {
         <View style={styles.profileInfo}>
           <Image source={imageUrl?{uri:imageUrl}:require("../assets/icons/default_pfp.png")} style={styles.profilePicture}/>
           <View style={styles.profileStats}>
-            <Text style={styles.fontSizeBold}>128</Text>
+            <Text style={styles.fontSizeBold}>{amountOfPosts}</Text>
             <Text>Posts</Text>
           </View>
           <View style={styles.profileStats}>

@@ -29,7 +29,10 @@ const HomeScreen = () => {
         }
         return;
     }
-    function getPosts() {
+    // function getPosts() {
+    // }
+    useEffect(() => {
+      const unsubscribe = () => {
         const q = query(collection(database, "Posts"), orderBy("createdAt", 'desc'));
         onSnapshot(q, (snaphot) => {
             let textObj = []
@@ -45,7 +48,7 @@ const HomeScreen = () => {
                         <TouchableOpacity style={{ flexDirection: "row" , alignItems: "center" }}
                             onPress={() => {post.authorId!=auth.currentUser.uid ? 
                                 navigation.navigate("Member Profile", { id: post.authorId }) :
-                                navigation.navigate("Profile", { screen: auth.currentUser.displayName || "username"})}
+                                navigation.navigate("Profile Tab", { screen: "Profile Screen"})}
                             }>
                             <Image source={post.authorPfp?{uri: post.authorPfp}:require("../assets/icons/default_pfp.png")} style={styles.profilePicture}/>
                             <Text style={styles.authorText}>{post.authorUsername}</Text>
@@ -71,9 +74,9 @@ const HomeScreen = () => {
             });
             setPosts(textObj)
         });
-    }
-    useEffect(() => {
-      const unsubscribe = getPosts()
+      }
+      unsubscribe()
+
       return unsubscribe
     }, [])
     
