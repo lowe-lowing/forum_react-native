@@ -8,69 +8,69 @@ import ProfilePosts from '../components/ProfilePosts'
 import { HeightContext } from '../context/heightContext'
 
 const MemberProfileScreen = () => {
-  const [memberId, setMemberId] = useState("")
-  const [imageUrl, setImageUrl] = useState()
-  const [userInfo, setUserInfo] = useState({})
-  const [following, setFollowing] = useState()
-  const [value, setValue] = useState(100)
-  const [amountOfPosts, setAmountOfPosts] = useState(0)
+  const [screenUserId, setScreenUserId] = useState("");
+  const [imageUrl, setImageUrl] = useState();
+  const [userInfo, setUserInfo] = useState({});
+  const [following, setFollowing] = useState();
+  const [value, setValue] = useState(100);
+  const [amountOfPosts, setAmountOfPosts] = useState(0);
 
-  const user = auth.currentUser
-  const navigation = useNavigation()
+  const user = auth.currentUser;
+  const navigation = useNavigation();
 
   async function handleFollow() {
-    const memberDocRef = doc(database, "userInfo", memberId);
-    const userDocRef = doc(database, "userInfo", user.uid);
-    const loggedInUserDoc = await getDoc(userDocRef)
-    let followersArray = userInfo.followers || []
-    let followingArray = loggedInUserDoc.followers || []
+    const screenUserDocRef = doc(database, "userInfo", screenUserId);
+    const loggedInuserDocRef = doc(database, "userInfo", user.uid);
+    const loggedInUserDoc = await getDoc(loggedInuserDocRef);
+    let screenUserfollowersArray = userInfo.followers || [];
+    let loggedInUserfollowingArray = loggedInUserDoc.data().following || [];
     if (!following) {
       // if not already following
       // update the members followers array
-      followersArray.push(user.uid)
-      await updateDoc(memberDocRef, {
-        followers: followersArray
-      })
+      screenUserfollowersArray.push(user.uid);
+      await updateDoc(screenUserDocRef, {
+        followers: screenUserfollowersArray,
+      });
       // update the users following array
-      followingArray.push(memberId)
-      await updateDoc(userDocRef, {
-        following: followingArray
-      })
+      loggedInUserfollowingArray.push(screenUserId);
+      await updateDoc(loggedInuserDocRef, {
+        following: loggedInUserfollowingArray,
+      });
       // set following stateVariable
-      setFollowing(true)
+      setFollowing(true);
     } else {
       // if following, unfollow
       // update the members followers array
-      followersArray.splice(followersArray.indexOf(user.uid), 1)
-      await updateDoc(memberDocRef, {
-        followers: followersArray
-      }) 
+      screenUserfollowersArray.splice(screenUserfollowersArray.indexOf(user.uid), 1);
+      await updateDoc(screenUserDocRef, {
+        followers: screenUserfollowersArray,
+      });
       // update the users following array
-      followingArray.splice(followingArray.indexOf(memberId), 1)
-      await updateDoc(userDocRef, {
-        following: followingArray
-      })
+      loggedInUserfollowingArray.splice(loggedInUserfollowingArray.indexOf(screenUserId), 1);
+      await updateDoc(loggedInuserDocRef, {
+        following: loggedInUserfollowingArray,
+      });
       // set following stateVariable
-      setFollowing(false)
+      setFollowing(false);
     }
   }
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', async () => {
-        const id = navigation.getState().routes[1].params.id
-        setMemberId(id)
-        const docRef = doc(database, "userInfo", id);
-        const docSnap = await getDoc(docRef);
-        const docData = docSnap.data()
-        navigation.setOptions(({
-            headerTitle: () => <Text style={styles.headerTitle}>{docData.username}</Text>
-        }))
-        setUserInfo(docData)
-        const downmloadUrl = await getDownloadURL(ref(storage, id + ".png")).catch(() => (undefined))
-        setImageUrl(downmloadUrl)
-        setFollowing(docData.followers ? docData.followers.indexOf(user.uid)>-1 : false)
-        const posts = await getDocs(query(collection(database, "Posts"), where("authorId", "==", id)))
-        setAmountOfPosts(posts.size)
+    const unsubscribe = navigation.addListener("focus", async () => {
+      const id = navigation.getState().routes[1].params.id;
+      setScreenUserId(id);
+      const docRef = doc(database, "userInfo", id);
+      const docSnap = await getDoc(docRef);
+      const docData = docSnap.data();
+      navigation.setOptions({
+        headerTitle: () => <Text style={styles.headerTitle}>{docData.username}</Text>,
+      });
+      setUserInfo(docData);
+      const downmloadUrl = await getDownloadURL(ref(storage, id + ".png")).catch(() => undefined);
+      setImageUrl(downmloadUrl);
+      setFollowing(docData.followers ? docData.followers.indexOf(user.uid) > -1 : false);
+      const posts = await getDocs(query(collection(database, "Posts"), where("authorId", "==", id)));
+      setAmountOfPosts(posts.size);
     });
 
     // Return the function to unsubscribe from the event so it gets removed on unmount
@@ -81,7 +81,10 @@ const MemberProfileScreen = () => {
     <ScrollView>
       <View style={styles.container}>
         <View style={styles.profileInfo}>
-          <Image source={imageUrl?{uri:imageUrl}:require("../assets/icons/default_pfp.png")} style={styles.profilePicture}/>
+          <Image
+            source={imageUrl ? { uri: imageUrl } : require("../assets/icons/default_pfp.png")}
+            style={styles.profilePicture}
+          />
           <View style={styles.profileStats}>
             <Text style={styles.fontSizeBold}>{amountOfPosts}</Text>
             <Text>Posts</Text>
@@ -95,28 +98,46 @@ const MemberProfileScreen = () => {
             <Text>Following</Text>
           </View>
         </View>
-        <Text>{userInfo.name&&userInfo.name}</Text>
-        <Text style={{marginBottom:5}}>{userInfo.biografy&&userInfo.biografy}</Text>
-        { following ?
-        <View style={styles.buttonContainer}>
-          <View style={styles.innerButtonContainer}>
-            <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Unfollow" />
-            <Button style={styles.editProfileButton} onPress={() => {navigation.navigate("Private Message Component", {id: memberId})}} title="Send message" /> 
+        <Text>{userInfo.name && userInfo.name}</Text>
+        <Text style={{ marginBottom: 5 }}>{userInfo.biografy && userInfo.biografy}</Text>
+        {following ? (
+          <View style={styles.buttonContainer}>
+            <View style={styles.innerButtonContainer}>
+              <Button
+                style={styles.editProfileButton}
+                onPress={() => {
+                  handleFollow();
+                }}
+                title="Unfollow"
+              />
+              <Button
+                style={styles.editProfileButton}
+                onPress={() => {
+                  navigation.navigate("Private Message Component", { id: screenUserId });
+                }}
+                title="Send message"
+              />
+            </View>
           </View>
-        </View>:
-        <View style={styles.buttonContainer}>
-          <View style={{width: '50%'}}>
-            <Button style={styles.editProfileButton} onPress={() => {handleFollow()}} title="Follow" />
+        ) : (
+          <View style={styles.buttonContainer}>
+            <View style={{ width: "50%" }}>
+              <Button
+                style={styles.editProfileButton}
+                onPress={() => {
+                  handleFollow();
+                }}
+                title="Follow"
+              />
+            </View>
           </View>
-        </View>}
+        )}
       </View>
-      <HeightContext.Provider value={{value, setValue}}>
-        <View style={{height: value, width: '100%'}}>
-          {ProfilePosts(navigation.getState().routes[1].params.id)}
-        </View>
+      <HeightContext.Provider value={{ value, setValue }}>
+        <View style={{ height: value, width: "100%" }}>{ProfilePosts(navigation.getState().routes[1].params.id)}</View>
       </HeightContext.Provider>
     </ScrollView>
-  )
+  );
 }
 
 export default MemberProfileScreen

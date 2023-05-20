@@ -1,34 +1,36 @@
-import {initializeApp} from 'firebase/app';
-// import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  initializeAuth,
-  getReactNativePersistence
-} from 'firebase/auth/react-native';
+import { initializeApp } from "firebase/app";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAjBy9phJjNnP0ZlSxnZ39A_ZiJ-7HyddY",
-    authDomain: "forum-react-native.firebaseapp.com",
-    projectId: "forum-react-native",
-    storageBucket: "forum-react-native.appspot.com",
-    messagingSenderId: "324622380026",
-    appId: "1:324622380026:web:d82251f1564226f4f6d243"
+  apiKey: "AIzaSyAjBy9phJjNnP0ZlSxnZ39A_ZiJ-7HyddY",
+  authDomain: "forum-react-native.firebaseapp.com",
+  projectId: "forum-react-native",
+  storageBucket: "forum-react-native.appspot.com",
+  messagingSenderId: "324622380026",
+  appId: "1:324622380026:web:d82251f1564226f4f6d243",
 };
 
 // initialize firebase app
 const app = initializeApp(firebaseConfig);
 
 // initialize auth
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+// const auth = initializeAuth(app, {
+//   persistence: getReactNativePersistence(AsyncStorage),
+// });
 
 // Initialize Firebase
 // const app = initializeApp(firebaseConfig)
-// const auth = getAuth(app)
-const database = getFirestore(app);
-const storage = getStorage(app)
+const auth = getAuth(app);
+// connectAuthEmulator(auth, "http://localhost:9099");
+// const database = getFirestore(app);
 
-export { auth, database, storage }
+// firebaseApps previously initialized using initializeApp()
+const database = getFirestore(app);
+// connectFirestoreEmulator(database, "localhost", 8080);
+
+const storage = getStorage(app);
+// connectStorageEmulator(storage, "localhost", 8080);
+
+export { auth, database, storage };

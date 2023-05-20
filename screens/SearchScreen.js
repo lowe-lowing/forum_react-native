@@ -41,8 +41,11 @@ const SearchScreen = ({navigation}) => {
     array.forEach(user => {
       const data = user.data()
       const id = user.id
-      if (data.username.includes(searchParam) && id != auth.currentUser.uid) {
-        tempArray.push(<UserComponent key={id} name={data.name} username={data.username} id={id} nav={navigation} img={data.pfp} />)
+      const username = data.username.toLowerCase();
+      if (username.includes(searchParam.toLowerCase()) && id != auth.currentUser.uid) {
+        tempArray.push(
+          <UserComponent key={id} name={data.name} username={data.username} id={id} nav={navigation} img={data.pfp} />
+        );
       }
     });
     setFoundUsers(tempArray)

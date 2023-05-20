@@ -117,49 +117,54 @@ const GridViewScreen = ({route}) => {
   )
 } 
 const TaggedPostsScreen = () => {
-    return (
-        <View>
-            <Text>settings</Text>
-        </View>
-    )
-} 
+  return (
+    <View style={styles.comingSoon}>
+      <Text style={{ fontSize: 20 }}>Coming soon!</Text>
+    </View>
+  );
+};
 
-export default ProfilePosts
+export default ProfilePosts;
 
 const styles = StyleSheet.create({
+  comingSoon: {
+    flex: 1,
+    alignItems: "center",
+    paddingTop: 50,
+  },
   tabBarIcon: {
     width: 30,
-    height: 30
+    height: 30,
   },
   gridView: {
-    flexDirection: 'row',
+    flexDirection: "row",
     flex: 1,
     maxHeight: 100,
   },
   row: {
-    flex: 1, 
-    flexDirection: "row", 
-    maxHeight: 100 
+    flex: 1,
+    flexDirection: "row",
+    maxHeight: 100,
   },
   column: {
-    flex: 1, 
+    flex: 1,
     borderWidth: 2,
-    borderColor: "lightgray"
+    borderColor: "lightgray",
   },
   solo: {
-    width: '33%',
+    width: "33%",
     borderWidth: 1,
-    borderColor: "lightgray"
+    borderColor: "lightgray",
   },
   bolo: {
     flex: 1,
   },
   postImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   postText: {
     margin: 10,
     fontSize: 16,
-  }
-})
+  },
+});

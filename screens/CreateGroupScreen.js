@@ -13,94 +13,103 @@ const CreateGroupScreen = () => {
     const [checkedMembers, setCheckedMembers] = useState([{name: user.displayName, id: user.uid, pfp: user.photoURL}])
     const [groupName, setGroupName] = useState("")
     const [searchValue, setSearchValue] = useState("")
+    const [loading, setLoading] = useState(false);
 
-    const navigation = useNavigation()
+    const navigation = useNavigation();
 
-    const MemberComponent = props => {
-        const [isSelected, setSelection] = useState(checkedMembers.length>0?checkedMembers.indexOf(props.id)>-1:false)
-        
-        function handleSelection(id, name, pfp) {
-            if (isSelected==false) {
-                setSelection(true)
-                setCheckedMembers(oldArray => [...oldArray, {name: name, id: id, pfp: pfp}])
-            }
-            else {
-                setSelection(false)
-                setCheckedMembers(oldArray => oldArray.filter(member => member.id !== id))
-            }
+    const MemberComponent = (props) => {
+      const [isSelected, setSelection] = useState(
+        checkedMembers.length > 0 ? checkedMembers.indexOf(props.id) > -1 : false
+      );
+
+      function handleSelection(id, name, pfp) {
+        if (isSelected == false) {
+          setSelection(true);
+          setCheckedMembers((oldArray) => [...oldArray, { name: name, id: id, pfp: pfp }]);
+        } else {
+          setSelection(false);
+          setCheckedMembers((oldArray) => oldArray.filter((member) => member.id !== id));
         }
+      }
 
-        return (
+      return (
         <>
-            <TouchableOpacity style={styles.messageComponent} onPress={()=>{handleSelection(props.id, props.name, props.img)}}>
-                <Image source={props.img ? { uri: props.img } : require("../assets/icons/default_pfp.png")} style={styles.messageComponentImage} />
-                <View style={styles.alignRight} >
-                    <View style={{flexDirection: "column"}}>
-                        <Text style={styles.messageComponentText}>{props.name}</Text>
-                        <Text style={styles.usernameText}>{props.username}</Text>
-                    </View>
-                    <CheckBox
-                        value={isSelected}
-                        style={styles.checkbox}
-                    />
-                </View>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.messageComponent}
+            onPress={() => {
+              handleSelection(props.id, props.name, props.img);
+            }}
+          >
+            <Image
+              source={props.img ? { uri: props.img } : require("../assets/icons/default_pfp.png")}
+              style={styles.messageComponentImage}
+            />
+            <View style={styles.alignRight}>
+              <View style={{ flexDirection: "column" }}>
+                <Text style={styles.messageComponentText}>{props.name}</Text>
+                <Text style={styles.usernameText}>{props.username}</Text>
+              </View>
+              <CheckBox value={isSelected} style={styles.checkbox} />
+            </View>
+          </TouchableOpacity>
         </>
-    )}
+      );
+    };
 
     function handleSearch(value) {
-        setSearchArray(memberArray.filter(member => member.props.name.toLowerCase().includes(value)))
+      setSearchArray(memberArray.filter((member) => member.props.name.toLowerCase().includes(value)));
     }
-    
+
     async function createGroup() {
-        const name = groupName
-        const creator = user.displayName
-        const members = checkedMembers
-        console.log(name, creator, members);
-        await addDoc(collection(database, "Groups"), {
-            name,
-            creator,
-            members,
-            messages: []
-        })
-        navigation.navigate("Groups")
+      setLoading(true);
+      const name = groupName;
+      const creator = user.displayName;
+      const members = checkedMembers;
+      await addDoc(collection(database, "Groups"), {
+        name,
+        creator,
+        members,
+        messages: [],
+      });
+      navigation.navigate("Groups");
     }
 
     useEffect(() => {
-        const unsubscribe = () => {
-            navigation.setOptions(({
-                headerRight: () => 
-                <Button title={"Create"} disabled={((checkedMembers.length>=3)?1:0) + ((groupName.length>=3)?1:0) < 2} onPress={createGroup}/>
-            }))
-        };
-
-        return unsubscribe;
-    }, [checkedMembers, groupName]);
+      navigation.setOptions({
+        headerRight: () => (
+          <Button
+            title={"Create"}
+            // members include the current logged in user so the minimum is 2 checked members
+            disabled={checkedMembers.length < 3 || groupName.length < 3 || loading}
+            onPress={createGroup}
+          />
+        ),
+      });
+    }, [checkedMembers, groupName, loading]);
 
     useEffect(() => {
-        const unsubscribe = () => {
-            const docRef = doc(database, "userInfo", user.uid);
-            getDoc(docRef).then((res) => {
-                var relationsArray = res.data().followers.concat(res.data().following).unique()
-                getDocs(collection(database, "userInfo")).then((response) => {
-                    let tempArray = []
-                    response.forEach(doc => {
-                        if (doc.id != user.uid && relationsArray.includes(doc.id)) {
-                            tempArray.push(
-                            <MemberComponent key={doc.id} 
-                                img={doc.data().pfp||null}
-                                name={doc.data().name} 
-                                username={doc.data().username} 
-                                id={doc.id}
-                            />)
-                        }
-                    });
-                    setMemberArray(tempArray)
-                });
-            })
-        };
-
-        return unsubscribe();
+      // initializes the memberArray with all the users that the current user follows and that follow the current user
+      const docRef = doc(database, "userInfo", user.uid);
+      getDoc(docRef).then((res) => {
+        var relationsArray = res.data().followers.concat(res.data().following).unique();
+        getDocs(collection(database, "userInfo")).then((response) => {
+          let tempArray = [];
+          response.forEach((doc) => {
+            if (doc.id != user.uid && relationsArray.includes(doc.id)) {
+              tempArray.push(
+                <MemberComponent
+                  key={doc.id}
+                  img={doc.data().pfp || null}
+                  name={doc.data().name}
+                  username={doc.data().username}
+                  id={doc.id}
+                />
+              );
+            }
+          });
+          setMemberArray(tempArray);
+        });
+      });
     }, []);
 
     return (

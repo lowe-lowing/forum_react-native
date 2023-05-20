@@ -17,56 +17,48 @@ const PostScreen = () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      // aspect: [1, 1],
       quality: 1,
     });
     if (!result.cancelled) {
-      setImageUrl(result.uri)
+      setImageUrl(result.uri);
     }
-  }
+  };
 
   const newPost = async () => {
-    const user = auth.currentUser
-      try {
-        setButtonDisabled(true)
-        // post post
-        const downmloadUrl = await getDownloadURL(ref(storage, user.uid + ".png")).catch(() => (null))
-        const docRef = await addDoc(collection(database, "Posts"), {
-          authorUsername: user.displayName,
-          authorId: user.uid,
-          authorPfp: downmloadUrl,
-          message: message,
-          createdAt: serverTimestamp(),
+    const user = auth.currentUser;
+    try {
+      setButtonDisabled(true);
+      // post post
+      const downmloadUrl = await getDownloadURL(ref(storage, user.uid + ".png")).catch(() => null);
+      const docRef = await addDoc(collection(database, "Posts"), {
+        authorUsername: user.displayName,
+        authorId: user.uid,
+        authorPfp: downmloadUrl,
+        message: message,
+        createdAt: serverTimestamp(),
+      });
+      console.log("post doc written with ID: ", docRef.id);
+      if (imageUrl != null) {
+        // upload image with the post id
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const fileRef = ref(storage, docRef.id + ".png");
+        const metadata = {
+          contentType: "image/png",
+        };
+        await uploadBytes(fileRef, blob, metadata);
+        const downmloadUrl = await getDownloadURL(fileRef);
+        // update post doc with photourl
+        await updateDoc(docRef, {
+          imageUrl: downmloadUrl,
         });
-        console.log("post doc written with ID: ", docRef.id);
-        if (imageUrl != null) {
-          // upload image with the post id
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
-          const fileRef = ref(storage, docRef.id + ".png");
-          const metadata = {
-              contentType: 'image/png',
-          };
-          await uploadBytes(fileRef, blob, metadata)
-          const downmloadUrl = await getDownloadURL(fileRef)
-          // update post doc with photourl
-          await updateDoc(docRef, {
-            imageUrl: downmloadUrl
-        });
-        }
-        navigation.navigate('Feed')
-      } catch (e) {
-        console.error("Error adding document: ", e);
-        setButtonDisabled(false);
       }
-  }
-  // useEffect(() => {
-  //   const unsubscribe = () => {
-  //     setButtonDisabled(message == "")
-  //     console.log(message);
-  //   }
-  //   return unsubscribe
-  // }, [message])
+      navigation.navigate("Feed");
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      setButtonDisabled(false);
+    }
+  };
   
   return (
     <View style={styles.firstContainer}>

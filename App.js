@@ -152,17 +152,18 @@ export default function App() {
   }, [])
   return (
     <NavigationContainer style={styles.container}>
-      {loggedIn ?
-      <Stack.Navigator>
-        <Stack.Screen options={{headerShown: false}} name="Main" component={MainTabs} />
-        <Stack.Screen name="Private Message Component" component={PrivateMessageComponent}/>
-      </Stack.Navigator> :
-      <LoginStack.Navigator>
-        <LoginStack.Screen name="Login" component={LoginScreen}/>
-        <LoginStack.Screen name="Register" component={RegisterScreen}/>
-        <LoginStack.Screen name="Forgot Password" component={ForgotPwd}/>
-      </LoginStack.Navigator>
-      }
+      {loggedIn ? (
+        <Stack.Navigator>
+          <Stack.Screen options={{ headerShown: false }} name="Main" component={MainTabs} />
+          <Stack.Screen name="Private Message Component" component={PrivateMessageComponent} />
+        </Stack.Navigator>
+      ) : (
+        <LoginStack.Navigator>
+          <LoginStack.Screen name="Login" component={LoginScreen} />
+          <LoginStack.Screen name="Register" component={RegisterScreen} />
+          {/* <LoginStack.Screen name="Forgot Password" component={ForgotPwd}/> */}
+        </LoginStack.Navigator>
+      )}
     </NavigationContainer>
   );
 }
